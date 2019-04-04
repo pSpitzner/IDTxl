@@ -13,6 +13,9 @@ data = Data()
 data.set_data(d[:, :, 0:100], 'psr')
 settings = {
         'cmi_estimator':  'OpenCLKraskovCMI',
+        'debug':  True,
+        'verbose':  True,
+        'gpu_id' : 2,
         'max_lag_sources': 50,
         'min_lag_sources': 40,
         'max_lag_target': 30,

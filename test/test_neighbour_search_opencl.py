@@ -331,7 +331,7 @@ def test_multiple_runs_two_dim():
     EST_MI = OpenCLKraskovMI(settings)
     EST_CMI = OpenCLKraskovCMI(settings)
 
-    n_chunks = 50000
+    n_chunks = 500
     pointset1 = np.array(
         [[-1, 0.5, 1.1, 2, 10, 11, 10.5, -100, -50, 666, 9999, 9999],
          [-1, 0.5, 1.1, 2, 98, -9, -200, 45.3, -53, 0.1, 9999, 9999]]).T.copy()
@@ -357,6 +357,31 @@ def test_multiple_runs_two_dim():
     assert np.isclose(dist2[3], 0.9), 'Distances 3 not correct.'
 
 
+def test_paul():
+    settings = {
+        'theiler_t': 0,
+        'knn_k': 1,
+        'gpu_id': 0,
+        'debug': True,
+        'return_counts': True,
+        'max_mem': 5 * 1024 * 1024}
+
+    EST_CMI = OpenCLKraskovCMI(settings)
+
+    n_chunks = 500
+    pointset1 = np.array(
+        [[-1, 0.5, 1.1, 2, 10, 11, 10.5, -100, -50, 666, 9999, 9999],
+         [-1, 0.5, 1.1, 2, 98, -9, -200, 45.3, -53, 0.1, 9999, 9999]]).T.copy()
+    pointset1 = np.tile(pointset1, (n_chunks, 1))
+    pointset2 = np.ones(pointset1.shape) * 9999
+    pointset3 = np.ones(pointset1.shape) * 9999
+
+
+    # Call CMI estimator with pointset2 as conditional (otherwise the MI
+    # estimator is called internally and the CMI estimator is never tested).
+    cmi, dist2, npoints_x, npoints_y, npoints_c = EST_CMI.estimate(
+        pointset1, pointset2, pointset3, n_chunks=n_chunks)
+
 if __name__ == '__main__':
     test_random_data()
     test_knn_one_dim()
@@ -368,3 +393,4 @@ if __name__ == '__main__':
     test_one_dim_longer_sequence()
     test_two_dim_longer_sequence()
     test_multiple_runs_two_dim()
+    test_paul()
