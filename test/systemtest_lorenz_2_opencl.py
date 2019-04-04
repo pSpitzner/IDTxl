@@ -15,7 +15,7 @@ settings = {
         'cmi_estimator':  'OpenCLKraskovCMI',
         'debug':  True,
         'verbose':  True,
-        'gpu_id' : 2,
+        'gpuid' : 1,
         'max_lag_sources': 50,
         'min_lag_sources': 40,
         'max_lag_target': 30,

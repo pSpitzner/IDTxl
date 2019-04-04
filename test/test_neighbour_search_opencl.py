@@ -15,7 +15,7 @@ pytest.importorskip('pyopencl')
 settings = {'theiler_t': 0,
             'kraskov_k': 1,
             'noise_level': 0,
-            'gpu_id': 0,
+            'gpuid': 1,
             'debug': True,
             'return_counts': True,
             'verbose': True}
@@ -25,6 +25,7 @@ EST_CMI = OpenCLKraskovCMI(settings)
 
 
 def test_knn_one_dim():
+    print("\n\ntest_knn_one_dim()")
     """Test kNN search in 1D."""
     n_chunks = 16
     pointset1 = np.expand_dims(np.array([-1, -1.2, 1, 1.1]), axis=1)
@@ -50,6 +51,7 @@ def test_knn_one_dim():
 
 
 def test_knn_two_dim():
+    print("\n\ntest_knn_two_dim()")
     """Test kNN search in 2D."""
     n_chunks = 16
     pointset1 = np.array([
@@ -79,6 +81,7 @@ def test_knn_two_dim():
 
 
 def test_one_dim_longer_sequence():
+    print("\n\ntest_one_dim_longer_sequence()")
     """Test kNN search in 1D."""
     n_chunks = 4
     pointset1 = np.expand_dims(
@@ -106,6 +109,7 @@ def test_one_dim_longer_sequence():
 
 
 def test_two_dim_longer_sequence():
+    print("\n\ntest_two_dim_longer_sequence()")
     """Test kNN with longer sequences.
 
     Note:
@@ -141,6 +145,7 @@ def test_two_dim_longer_sequence():
 
 
 def test_random_data():
+    print("\n\ntest_random_data()")
     """Smoke kNN test with big random dataset."""
     n_points = 1000
     n_dims = 5
@@ -150,15 +155,20 @@ def test_random_data():
     # Call MI estimator
     mi, dist1, npoints_x, npoints_y = EST_MI.estimate(
         pointset1, pointset2, n_chunks=1)
+
+    print("mi done")
     # Call CMI estimator with pointset2 as conditional (otherwise the MI
     # estimator is called internally and the CMI estimator is never tested).
     cmi, dist2, npoints_x, npoints_y, npoints_c = EST_CMI.estimate(
         pointset1, pointset2, pointset2, n_chunks=1)
+
+    print("cmi done")
     assert np.all(np.isclose(dist1, dist2)), (
         'High- and low-level calls returned different distances.')
 
 
 def test_two_chunks():
+    print("\n\ntest_two_chunks()")
     """Run knn search for two chunks."""
     n_chunks = 2 * 8
     pointset1 = np.expand_dims(  # this is data for two chunks
@@ -193,6 +203,7 @@ def test_two_chunks():
 
 
 def test_three_chunks():
+    print("\n\ntest_three_chunks()")
     """Run knn search for three chunks."""
     n_chunks = 3 * 16
     pointset1 = np.expand_dims(np.array(
@@ -235,6 +246,7 @@ def test_three_chunks():
 
 
 def test_two_chunks_two_dim():
+    print("\n\ntest_two_chunks_two_dim()")
     """Test kNN with two chunks of 2D data in the same call."""
     n_chunks = 2 * 8
     pointset1 = np.array(  # this is data for two chunks
@@ -277,6 +289,7 @@ def test_two_chunks_two_dim():
 
 
 def test_two_chunks_odd_dim():
+    print("\n\ntest_two_chunks_odd_dim()")
     """Test kNN with two chunks of data with odd dimension."""
     n_chunks = 2 * 8
     pointset1 = np.array([  # this is data for two chunks
@@ -320,6 +333,7 @@ def test_two_chunks_odd_dim():
 
 
 def test_multiple_runs_two_dim():
+    print("\n\ntest_multiple_runs_two_dim()")
     """Test kNN with two chunks of 2D data in the same call."""
     settings = {
         'theiler_t': 0,
@@ -358,13 +372,14 @@ def test_multiple_runs_two_dim():
 
 
 def test_paul():
-    settings = {
-        'theiler_t': 0,
-        'knn_k': 1,
-        'gpu_id': 0,
-        'debug': True,
-        'return_counts': True,
-        'max_mem': 5 * 1024 * 1024}
+    print("\n\ntest_paul()")
+    # settings = {
+    #     'theiler_t': 0,
+    #     'knn_k': 1,
+    #     'gpuid': 0,
+    #     'debug': True,
+    #     'return_counts': True,
+    #     'max_mem': 5 * 1024 * 1024}
 
     EST_CMI = OpenCLKraskovCMI(settings)
 
@@ -381,6 +396,7 @@ def test_paul():
     # estimator is called internally and the CMI estimator is never tested).
     cmi, dist2, npoints_x, npoints_y, npoints_c = EST_CMI.estimate(
         pointset1, pointset2, pointset3, n_chunks=n_chunks)
+
 
 if __name__ == '__main__':
     test_random_data()

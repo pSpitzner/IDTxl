@@ -12,58 +12,63 @@ except ImportError as err:
 
 
 class OpenCLKraskov(Estimator):
-    """Abstract class for implementation of OpenCL estimators.
+    """
+        Abstract class for implementation of OpenCL estimators.
 
-    Abstract class for implementation of OpenCL estimators, child classes
-    implement estimators for mutual information (MI) and conditional mutual
-    information (CMI) using the Kraskov-Grassberger-Stoegbauer estimator for
-    continuous data.
+        Abstract class for implementation of OpenCL estimators, child classes
+        implement estimators for mutual information (MI) and conditional mutual
+        information (CMI) using the Kraskov-Grassberger-Stoegbauer estimator for
+        continuous data.
 
-    References:
+        References:
 
-    - Kraskov, A., Stoegbauer, H., & Grassberger, P. (2004). Estimating mutual
-      information. Phys Rev E, 69(6), 066138.
-    - Lizier, Joseph T., Mikhail Prokopenko, and Albert Y. Zomaya. (2012).
-      Local measures of information storage in complex distributed computation.
-      Inform Sci, 208, 39-54.
-    - Schreiber, T. (2000). Measuring information transfer. Phys Rev Lett,
-      85(2), 461.
+        - Kraskov, A., Stoegbauer, H., & Grassberger, P. (2004). Estimating mutual
+          information. Phys Rev E, 69(6), 066138.
+        - Lizier, Joseph T., Mikhail Prokopenko, and Albert Y. Zomaya. (2012).
+          Local measures of information storage in complex distributed computation.
+          Inform Sci, 208, 39-54.
+        - Schreiber, T. (2000). Measuring information transfer. Phys Rev Lett,
+          85(2), 461.
 
-    Estimators can be used to perform multiple, independent searches in
-    parallel. Each of these parallel searches is called a 'chunk'. To search
-    multiple chunks, provide point sets as 2D arrays, where the first
-    dimension represents samples or points, and the second dimension
-    represents the points' dimensions. Concatenate chunk data in the first
-    dimension and pass the number of chunks to the estimators. Chunks must be
-    of equal size.
+        Estimators can be used to perform multiple, independent searches in
+        parallel. Each of these parallel searches is called a 'chunk'. To search
+        multiple chunks, provide point sets as 2D arrays, where the first
+        dimension represents samples or points, and the second dimension
+        represents the points' dimensions. Concatenate chunk data in the first
+        dimension and pass the number of chunks to the estimators. Chunks must be
+        of equal size.
 
-    Set common estimation parameters for OpenCL estimators. For usage of these
-    estimators see documentation for the child classes.
+        Set common estimation parameters for OpenCL estimators. For usage of these
+        estimators see documentation for the child classes.
 
-    Args:
-        settings : dict [optional]
-            set estimator parameters:
+        Args:
+            settings : dict [optional]
+                set estimator parameters:
 
-            - gpuid : int [optional] - device ID used for estimation (if more
-              than one device is available on the current platform) (default=0)
-            - kraskov_k : int [optional] - no. nearest neighbours for KNN
-              search (default=4)
-            - normalise : bool [optional] - z-standardise data (default=False)
-            - theiler_t : int [optional] - no. next temporal neighbours ignored
-              in KNN and range searches (default=0)
-            - noise_level : float [optional] - random noise added to the data
-              (default=1e-8)
-            - debug : bool [optional] - calculate intermediate results, i.e.
-              neighbour counts from range searches and KNN distances, print
-              debug output to console (default=False)
-            - return_counts : bool [optional] - return intermediate results,
-              i.e. neighbour counts from range searches and KNN distances
-              (default=False)
+                - gpuid : int [optional] - device ID used for estimation (if more
+                  than one device is available on the current platform) (default=0)
+                - kraskov_k : int [optional] - no. nearest neighbours for KNN
+                  search (default=4)
+                - normalise : bool [optional] - z-standardise data (default=False)
+                - theiler_t : int [optional] - no. next temporal neighbours ignored
+                  in KNN and range searches (default=0)
+                - noise_level : float [optional] - random noise added to the data
+                  (default=1e-8)
+                - debug : bool [optional] - calculate intermediate results, i.e.
+                  neighbour counts from range searches and KNN distances, print
+                  debug output to console (default=False)
+                - return_counts : bool [optional] - return intermediate results,
+                  i.e. neighbour counts from range searches and KNN distances
+                  (default=False)
     """
 
     def __init__(self, settings=None):
         # Get defaults for estimator settings
-        settings = self._check_settings(settings)
+        # print("constructor settings")
+        # print(settings)
+        settings = self._check_settings(settings)   # this is not implemented
+        # print("after check settings")
+        # print(settings)
         self.settings = settings.copy()
         self.settings.setdefault('gpuid', int(0))
         self.settings.setdefault('kraskov_k', int(4))
@@ -107,7 +112,11 @@ class OpenCLKraskov(Estimator):
             raise RuntimeError(
                 'No device with gpuid {0} (available device IDs: {1}).'.format(
                     gpuid, np.arange(len(my_gpu_devices))))
-        queue = cl.CommandQueue(context, my_gpu_devices[gpuid])
+        queue = cl.CommandQueue(context, my_gpu_devices[gpuid],
+            # properties = \
+            # cl.command_queue_properties.PROFILING_ENABLE
+            # | cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE
+            )
         if self.settings['debug']:
             print("Selected Device: ", my_gpu_devices[gpuid].name)
         return my_gpu_devices, context, queue
@@ -139,32 +148,33 @@ class OpenCLKraskov(Estimator):
 
 
 class OpenCLKraskovMI(OpenCLKraskov):
-    """Calculate mutual information with OpenCL Kraskov implementation.
+    """
+        Calculate mutual information with OpenCL Kraskov implementation.
 
-    Calculate the mutual information (MI) between two variables using OpenCL
-    GPU-code. See parent class for references.
+        Calculate the mutual information (MI) between two variables using OpenCL
+        GPU-code. See parent class for references.
 
-    Args:
-        settings : dict [optional]
-            set estimator parameters:
+        Args:
+            settings : dict [optional]
+                set estimator parameters:
 
-            - gpuid : int [optional] - device ID used for estimation (if more
-              than one device is available on the current platform) (default=0)
-            - kraskov_k : int [optional] - no. nearest neighbours for KNN
-              search (default=4)
-            - normalise : bool [optional] - z-standardise data (default=False)
-            - theiler_t : int [optional] - no. next temporal neighbours ignored
-              in KNN and range searches (default=0)
-            - noise_level : float [optional] - random noise added to the data
-              (default=1e-8)
-            - debug : bool [optional] - return intermediate results, i.e.
-              neighbour counts from range searches and KNN distances
-              (default=False)
-            - return_counts : bool [optional] - return intermediate results,
-              i.e. neighbour counts from range searches and KNN distances
-              (default=False)
-            - lag_mi : int [optional] - time difference in samples to calculate
-              the lagged MI between processes (default=0)
+                - gpuid : int [optional] - device ID used for estimation (if more
+                  than one device is available on the current platform) (default=0)
+                - kraskov_k : int [optional] - no. nearest neighbours for KNN
+                  search (default=4)
+                - normalise : bool [optional] - z-standardise data (default=False)
+                - theiler_t : int [optional] - no. next temporal neighbours ignored
+                  in KNN and range searches (default=0)
+                - noise_level : float [optional] - random noise added to the data
+                  (default=1e-8)
+                - debug : bool [optional] - return intermediate results, i.e.
+                  neighbour counts from range searches and KNN distances
+                  (default=False)
+                - return_counts : bool [optional] - return intermediate results,
+                  i.e. neighbour counts from range searches and KNN distances
+                  (default=False)
+                - lag_mi : int [optional] - time difference in samples to calculate
+                  the lagged MI between processes (default=0)
     """
 
     def __init__(self, settings=None):
@@ -173,30 +183,32 @@ class OpenCLKraskovMI(OpenCLKraskov):
         self.settings.setdefault('lag_mi', 0)
 
     def estimate(self, var1, var2, n_chunks=1):
-        """Estimate mutual information.
+        """
+            Estimate mutual information.
 
-        Args:
-            var1 : numpy array
-                realisations of first variable, either a 2D numpy array where
-                array dimensions represent [(realisations * n_chunks) x
-                variable dimension] or a 1D array representing [realisations],
-                array type should be int32
-            var2 : numpy array
-                realisations of the second variable (similar to var1)
-            n_chunks : int
-                number of data chunks, no. data points has to be the same for
-                each chunk
+            Args:
+                var1 : numpy array
+                    realisations of first variable, either a 2D numpy array where
+                    array dimensions represent [(realisations * n_chunks) x
+                    variable dimension] or a 1D array representing [realisations],
+                    array type should be int32
+                var2 : numpy array
+                    realisations of the second variable (similar to var1)
+                n_chunks : int
+                    number of data chunks, no. data points has to be the same for
+                    each chunk
 
-        Returns:
-            float | numpy array
-                average MI over all samples or local MI for individual
-                samples if 'local_values'=True
-            numpy arrays
-                distances and neighborhood counts for var1 and var2 if
-                debug=True and return_counts=True
+            Returns:
+                float | numpy array
+                    average MI over all samples or local MI for individual
+                    samples if 'local_values'=True
+                numpy arrays
+                    distances and neighborhood counts for var1 and var2 if
+                    debug=True and return_counts=True
         """
         # Prepare data: check if variable realisations are passed as 1D or 2D
         # arrays and have equal no. observations.
+
         var1 = self._ensure_two_dim_input(var1)
         var2 = self._ensure_two_dim_input(var2)
         assert var1.shape[0] == var2.shape[0]
@@ -337,6 +349,7 @@ class OpenCLKraskovMI(OpenCLKraskov):
         NDRange_x = (workitems_x *
                      (int((signallength_padded - 1)/workitems_x) + 1))
 
+
         # Allocate and copy memory to device
         kraskov_k = self.settings['kraskov_k']
         d_pointset = cl.Buffer(
@@ -362,6 +375,7 @@ class OpenCLKraskovMI(OpenCLKraskov):
         d_npointsrange_y = cl.Buffer(self.context, cl.mem_flags.READ_WRITE,
                                      self.sizeof_int * signallength_padded)
 
+
         # Neighbour search
         theiler_t = np.int32(self.settings['theiler_t'])
         localmem = cl.LocalMemory(self.sizeof_float * kraskov_k * workitems_x)
@@ -373,6 +387,10 @@ class OpenCLKraskovMI(OpenCLKraskov):
         cl.enqueue_copy(self.queue, distances, d_distances)
         self.queue.finish()
 
+        # ------------------------------------------------------------------ #
+        # bug below?
+        # ------------------------------------------------------------------ #
+
         # Range search in var1
         localmem = cl.LocalMemory(self.sizeof_int * workitems_x)
         self.RS_kernel(
@@ -380,7 +398,9 @@ class OpenCLKraskovMI(OpenCLKraskov):
             d_var1, d_vecradius, d_npointsrange_x,
             var1dim, chunklength, signallength_padded, theiler_t, localmem)
         count_var1 = np.zeros(signallength_padded, dtype=np.int32)
+        print("crash below")
         cl.enqueue_copy(self.queue, count_var1, d_npointsrange_x)
+
 
         # Range search in var2
         self.RS_kernel(
